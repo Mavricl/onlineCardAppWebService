@@ -6,35 +6,56 @@ const port = 3000;
 
 //database config info
 const dbConfig = {
-    host: process.env.DB_HOST,
-    user: process.env.DB_USER,
-    password: process.env.DB_PASSWORD,
-    database: process.env.DB_NAME,
-    port: process.env.DB_PORT,
-    waitForConnections: true,
-    connectionLimit: 100,
-    queueLimit: 0,
+  host: process.env.DB_HOST,
+  user: process.env.DB_USER,
+  password: process.env.DB_PASSWORD,
+  database: process.env.DB_NAME,
+  port: process.env.DB_PORT,
+  waitForConnections: true,
+  connectionLimit: 100,
+  queueLimit: 0,
 };
 //initialize Express app
 const app = express();
 //helps app to read JSON
 app.use(express.json());
 
+
+const DEMO_USER = { id: 1, username: "admin", password: "admin123" };
+
+const JWT_SECRET = process.env.JWT_SECRET || "dev_secret_change_me";
+
 //start server
 app.listen(port, () => {
-    console.log('Server running on port', port);
+  console.log('Server running on port', port);
+});
+
+//login authentication
+app.post("/login", (rreq, res) => {
+  const { username, password } = req.body;
+
+  if (username !== DEMO_USER.username || password !== DEMO_USER.password) {
+    return res.status(401).json({ error: "Invalid credentials" });
+  }
+
+  const token = jwt.sign(
+    { userId: DEMO_USER.id, username: DEMO_USER.username },
+    JWT_SECRET,
+    { expiresIn: "1h" }
+  );
+  res.json({ token });
 });
 
 //Example Route: Get all cards
 app.get('/allcards', async (req, res) => {
-    try {
-        let connection = await mysql.createConnection(dbConfig);
-        const [rows] = await connection.execute('SELECT * FROM defaultdb.cards');
-        res.json(rows);
-    } catch (err) {
-        console.error(err);
-        res.status(500).json({message: 'Server error for allcards' });
-    }
+  try {
+    let connection = await mysql.createConnection(dbConfig);
+    const [rows] = await connection.execute('SELECT * FROM defaultdb.cards');
+    res.json(rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server error for allcards' });
+  }
 });
 
 // Route: Add a new card (POST)
